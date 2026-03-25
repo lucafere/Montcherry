@@ -1,0 +1,682 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Econopoly — Class Scoreboard</title>
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@700&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --fishing: #0077b6;
+    --hotelery: #8338ec;
+    --tourism: #f77f00;
+    --restaurants: #d62828;
+    --bg: #f5f0e8;
+    --surface: #fffdf9;
+    --border: #e0d8cc;
+    --text: #1a1612;
+    --muted: #7a7060;
+    --growth-color: #2d6a4f;
+    --inflation-color: #9b2226;
+    --unemp-color: #1d3557;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: 'DM Sans', sans-serif; background: var(--bg); color: var(--text); min-height: 100vh; }
+
+  /* HEADER */
+  header {
+    background: var(--text);
+    color: #f5f0e8;
+    padding: 1.5rem 2rem;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    position: sticky;
+    top: 0;
+    z-index: 100;
+    border-bottom: 3px solid #e9b44c;
+  }
+  .logo { font-family: 'Playfair Display', serif; font-size: 1.8rem; letter-spacing: -0.5px; }
+  .logo span { color: #e9b44c; }
+  .header-right { display: flex; align-items: center; gap: 1rem; }
+  .round-badge { background: #e9b44c; color: var(--text); font-weight: 600; font-size: 0.85rem; padding: 0.3rem 0.8rem; border-radius: 999px; }
+  .btn-reset { background: transparent; color: #f5f0e8; border: 1px solid rgba(245,240,232,0.3); padding: 0.4rem 1rem; border-radius: 6px; font-family: inherit; font-size: 0.85rem; cursor: pointer; transition: all 0.15s; }
+  .btn-reset:hover { background: rgba(255,255,255,0.1); }
+
+  /* GOALS BANNER */
+  .goals-bar {
+    background: #e9b44c;
+    padding: 0.5rem 2rem;
+    display: flex;
+    gap: 2rem;
+    font-size: 0.8rem;
+    font-weight: 600;
+    color: var(--text);
+    flex-wrap: wrap;
+  }
+  .goals-bar span { opacity: 0.7; font-weight: 400; }
+
+  /* MAIN LAYOUT */
+  main { padding: 2rem; max-width: 1400px; margin: 0 auto; }
+
+  /* SCORECARDS GRID */
+  .cards-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+    gap: 1.5rem;
+    margin-bottom: 2rem;
+  }
+
+  /* PLAYER CARD */
+  .player-card {
+    background: var(--surface);
+    border-radius: 16px;
+    border: 1.5px solid var(--border);
+    overflow: hidden;
+    transition: transform 0.2s, box-shadow 0.2s;
+  }
+  .player-card:hover { transform: translateY(-2px); box-shadow: 0 8px 24px rgba(0,0,0,0.08); }
+  .player-card.winner {
+    border-color: #e9b44c;
+    box-shadow: 0 0 0 3px rgba(233,180,76,0.3);
+    animation: pulse-winner 1.5s infinite;
+  }
+  @keyframes pulse-winner {
+    0%,100% { box-shadow: 0 0 0 3px rgba(233,180,76,0.3); }
+    50% { box-shadow: 0 0 0 6px rgba(233,180,76,0.15); }
+  }
+
+  .card-header {
+    padding: 1rem 1.25rem 0.75rem;
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    border-bottom: 1px solid var(--border);
+  }
+  .industry-icon {
+    width: 44px; height: 44px;
+    border-radius: 12px;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 1.4rem;
+    flex-shrink: 0;
+  }
+  .card-header-info { flex: 1; }
+  .industry-name { font-family: 'Playfair Display', serif; font-size: 1.15rem; font-weight: 700; }
+  .money-display { font-size: 0.85rem; color: var(--muted); font-weight: 500; }
+  .money-display strong { color: var(--text); }
+  .winner-badge {
+    background: #e9b44c; color: var(--text);
+    font-size: 0.7rem; font-weight: 700;
+    padding: 0.25rem 0.6rem;
+    border-radius: 999px;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+  }
+
+  /* METRICS */
+  .metrics { padding: 1rem 1.25rem; display: flex; flex-direction: column; gap: 0.75rem; }
+  .metric { }
+  .metric-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.3rem; }
+  .metric-label { font-size: 0.75rem; font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px; }
+  .metric-value { font-size: 1rem; font-weight: 600; }
+  .metric-goal { font-size: 0.7rem; color: var(--muted); }
+  .progress-track { height: 7px; background: #ece8e0; border-radius: 999px; overflow: hidden; }
+  .progress-fill { height: 100%; border-radius: 999px; transition: width 0.4s ease; }
+
+  .growth .metric-label { color: var(--growth-color); }
+  .growth .progress-fill { background: var(--growth-color); }
+  .inflation .metric-label { color: var(--inflation-color); }
+  .inflation .progress-fill { background: var(--inflation-color); }
+  .unemp .metric-label { color: var(--unemp-color); }
+  .unemp .progress-fill { background: var(--unemp-color); }
+
+  /* ADJUST BUTTONS */
+  .adjust-row { display: flex; gap: 0.4rem; margin-top: 0.25rem; }
+  .adj-btn { flex: 1; padding: 0.3rem 0; font-family: inherit; font-size: 0.75rem; font-weight: 500; border-radius: 6px; cursor: pointer; transition: all 0.1s; border: 1px solid var(--border); background: var(--bg); color: var(--text); }
+  .adj-btn:hover { background: var(--border); }
+  .adj-btn.plus { color: var(--growth-color); border-color: #b7e4c7; background: #f0faf4; }
+  .adj-btn.plus:hover { background: #d8f3e3; }
+  .adj-btn.minus { color: var(--inflation-color); border-color: #f4b8b8; background: #fef5f5; }
+  .adj-btn.minus:hover { background: #fce8e8; }
+
+  /* ADVANTAGE CARDS */
+  .adv-section { padding: 0.75rem 1.25rem 1rem; border-top: 1px solid var(--border); }
+  .adv-label { font-size: 0.7rem; text-transform: uppercase; letter-spacing: 0.5px; font-weight: 600; color: var(--muted); margin-bottom: 0.5rem; }
+  .adv-chips { display: flex; flex-wrap: wrap; gap: 0.35rem; }
+  .adv-chip {
+    background: #f0ebff; color: #5b21b6;
+    border: 1px solid #ddd6fe;
+    border-radius: 999px;
+    padding: 0.2rem 0.6rem;
+    font-size: 0.72rem;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.1s;
+    position: relative;
+  }
+  .adv-chip:hover { background: #ede9fe; }
+  .no-adv { font-size: 0.75rem; color: var(--muted); font-style: italic; }
+
+  /* PROPERTIES */
+  .props-section { padding: 0 1.25rem 1rem; border-top: 1px solid var(--border); }
+  .props-chips { display: flex; flex-wrap: wrap; gap: 0.35rem; margin-top: 0.5rem; }
+  .prop-chip {
+    border-radius: 999px;
+    padding: 0.2rem 0.6rem;
+    font-size: 0.7rem;
+    font-weight: 500;
+    border: 1px solid;
+  }
+
+  /* PANELS */
+  .panels { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 1.5rem; margin-bottom: 2rem; }
+  @media(max-width: 900px) { .panels { grid-template-columns: 1fr; } }
+  .panel { background: var(--surface); border-radius: 16px; border: 1.5px solid var(--border); padding: 1.25rem; }
+  .panel-title { font-family: 'Playfair Display', serif; font-size: 1.1rem; margin-bottom: 1rem; display: flex; align-items: center; gap: 0.5rem; }
+  .panel-title .dot { width: 10px; height: 10px; border-radius: 50%; }
+
+  /* CARD LISTS */
+  .card-list { display: flex; flex-direction: column; gap: 0.6rem; max-height: 420px; overflow-y: auto; padding-right: 4px; }
+  .card-list::-webkit-scrollbar { width: 4px; }
+  .card-list::-webkit-scrollbar-thumb { background: var(--border); border-radius: 999px; }
+
+  .wild-card {
+    border-radius: 10px;
+    padding: 0.75rem;
+    border: 1px solid;
+    cursor: pointer;
+    transition: all 0.15s;
+  }
+  .wild-card:hover { transform: translateX(2px); }
+  .wild-card.good { background: #f0faf4; border-color: #b7e4c7; }
+  .wild-card.bad { background: #fef5f5; border-color: #f4b8b8; }
+  .wild-card.advantage { background: #f5f3ff; border-color: #ddd6fe; }
+  .wc-title { font-weight: 600; font-size: 0.85rem; display: flex; align-items: center; gap: 0.4rem; }
+  .wc-type { font-size: 0.65rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px; padding: 1px 6px; border-radius: 999px; }
+  .type-demand { background: #dbeafe; color: #1e40af; }
+  .type-supply { background: #fef3c7; color: #92400e; }
+  .type-adv { background: #ede9fe; color: #5b21b6; }
+  .wc-desc { font-size: 0.75rem; color: var(--muted); margin-top: 0.25rem; line-height: 1.4; }
+  .wc-effects { font-size: 0.72rem; font-weight: 600; margin-top: 0.3rem; }
+  .effect-tag { display: inline-block; margin-right: 4px; padding: 1px 5px; border-radius: 4px; background: rgba(0,0,0,0.06); }
+
+  .apply-card-section { margin-top: 0.75rem; padding-top: 0.75rem; border-top: 1px solid var(--border); }
+  .apply-label { font-size: 0.75rem; font-weight: 600; color: var(--muted); margin-bottom: 0.4rem; }
+  .target-checks { display: flex; gap: 0.4rem; flex-wrap: wrap; }
+  .target-check { display: flex; align-items: center; gap: 0.3rem; font-size: 0.75rem; cursor: pointer; }
+  .apply-btn {
+    margin-top: 0.5rem;
+    width: 100%;
+    padding: 0.4rem;
+    border-radius: 7px;
+    border: none;
+    font-family: inherit;
+    font-size: 0.8rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.15s;
+  }
+  .apply-btn.shock-apply { background: #1a1612; color: #f5f0e8; }
+  .apply-btn.shock-apply:hover { background: #333; }
+  .apply-btn.adv-apply { background: #5b21b6; color: white; }
+  .apply-btn.adv-apply:hover { background: #4c1d95; }
+
+  /* BUY PROPERTY PANEL */
+  .buy-panel { background: var(--surface); border-radius: 16px; border: 1.5px solid var(--border); padding: 1.25rem; margin-bottom: 2rem; }
+  .prop-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 0.75rem; margin-top: 1rem; }
+  .prop-item {
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 0.75rem;
+    background: var(--bg);
+    transition: all 0.15s;
+  }
+  .prop-item:hover { background: #ece8df; }
+  .prop-item.owned { opacity: 0.5; pointer-events: none; }
+  .prop-name { font-weight: 600; font-size: 0.85rem; margin-bottom: 0.25rem; }
+  .prop-cost { font-size: 0.8rem; color: var(--growth-color); font-weight: 600; }
+  .prop-bonus { font-size: 0.7rem; color: var(--muted); margin: 0.2rem 0; }
+  .prop-industry-tag { display: inline-block; font-size: 0.65rem; padding: 1px 6px; border-radius: 999px; font-weight: 600; margin-bottom: 0.3rem; }
+  .buy-for { margin-top: 0.5rem; }
+  .buy-for select, .buy-for button {
+    font-family: inherit; font-size: 0.75rem; padding: 0.25rem 0.5rem;
+    border-radius: 6px; border: 1px solid var(--border); background: var(--surface);
+    cursor: pointer;
+  }
+  .buy-for button { background: var(--text); color: #f5f0e8; border-color: var(--text); margin-left: 0.3rem; }
+  .buy-for button:hover { background: #333; }
+
+  /* LOG */
+  .log-panel { background: var(--text); color: #f5f0e8; border-radius: 16px; padding: 1.25rem; margin-bottom: 2rem; }
+  .log-title { font-family: 'Playfair Display', serif; font-size: 1rem; color: #e9b44c; margin-bottom: 0.75rem; }
+  .log-entries { display: flex; flex-direction: column; gap: 0.3rem; max-height: 180px; overflow-y: auto; }
+  .log-entry { font-size: 0.78rem; color: #c8c0b0; font-family: monospace; padding: 0.2rem 0; border-bottom: 1px solid rgba(255,255,255,0.05); }
+  .log-entry:last-child { color: #f5f0e8; }
+
+  /* TABS */
+  .tab-bar { display: flex; gap: 0.5rem; margin-bottom: 1.25rem; flex-wrap: wrap; }
+  .tab { padding: 0.4rem 1rem; border-radius: 999px; border: 1px solid var(--border); font-family: inherit; font-size: 0.82rem; font-weight: 500; cursor: pointer; background: var(--bg); color: var(--muted); transition: all 0.15s; }
+  .tab.active { background: var(--text); color: #f5f0e8; border-color: var(--text); }
+
+  /* ADVANTAGE USE MODAL */
+  .modal-overlay { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.5); z-index: 200; align-items: center; justify-content: center; }
+  .modal-overlay.open { display: flex; }
+  .modal { background: var(--surface); border-radius: 16px; padding: 1.5rem; max-width: 400px; width: 90%; }
+  .modal h3 { font-family: 'Playfair Display', serif; margin-bottom: 0.75rem; }
+  .modal p { font-size: 0.85rem; color: var(--muted); margin-bottom: 1rem; line-height: 1.5; }
+  .modal-btns { display: flex; gap: 0.5rem; flex-wrap: wrap; }
+  .modal-btns button { flex: 1; padding: 0.5rem; border-radius: 8px; border: 1px solid var(--border); font-family: inherit; font-size: 0.82rem; font-weight: 600; cursor: pointer; background: var(--text); color: #f5f0e8; }
+  .modal-btns .cancel-btn { background: var(--bg); color: var(--text); }
+  .modal-select { width: 100%; margin-bottom: 0.75rem; padding: 0.5rem; border-radius: 8px; border: 1px solid var(--border); font-family: inherit; font-size: 0.85rem; }
+
+  .toast { position: fixed; bottom: 1.5rem; right: 1.5rem; background: var(--text); color: #f5f0e8; padding: 0.75rem 1.25rem; border-radius: 10px; font-size: 0.85rem; z-index: 300; opacity: 0; transform: translateY(10px); transition: all 0.3s; pointer-events: none; border-left: 4px solid #e9b44c; }
+  .toast.show { opacity: 1; transform: translateY(0); }
+</style>
+</head>
+<body>
+
+<header>
+  <div class="logo">Econo<span>poly</span></div>
+  <div class="header-right">
+    <span class="round-badge" id="round-counter">Round 0</span>
+    <button class="btn-reset" onclick="confirmReset()">↺ Reset Game</button>
+  </div>
+</header>
+
+<div class="goals-bar">
+  <strong>🎯 Win Condition:</strong>
+  <span>Growth</span> ≥ 100 &nbsp;|&nbsp;
+  <span>Inflation</span> ≤ 5 &nbsp;|&nbsp;
+  <span>Unemployment</span> ≤ 5
+</div>
+
+<main>
+
+  <!-- SCOREBOARDS -->
+  <div class="cards-grid" id="cards-grid"></div>
+
+  <!-- PANELS -->
+  <div class="tab-bar">
+    <button class="tab active" onclick="showSection('shocks')">⚡ Shocks</button>
+    <button class="tab" onclick="showSection('advantages')">🃏 Advantage Cards</button>
+    <button class="tab" onclick="showSection('properties')">🏗️ Buy Property</button>
+  </div>
+
+  <div id="section-shocks">
+    <div class="panels">
+      <div class="panel">
+        <div class="panel-title"><div class="dot" style="background:#1e40af"></div> Demand Shocks — Good</div>
+        <div class="card-list" id="demand-good"></div>
+      </div>
+      <div class="panel">
+        <div class="panel-title"><div class="dot" style="background:#dc2626"></div> Demand Shocks — Bad</div>
+        <div class="card-list" id="demand-bad"></div>
+      </div>
+      <div class="panel" style="display:none" id="supply-panel-good-wrap">
+        <div class="panel-title"><div class="dot" style="background:#d97706"></div> Supply Shocks — Good</div>
+        <div class="card-list" id="supply-good"></div>
+      </div>
+    </div>
+    <div class="panels" style="grid-template-columns: 1fr 1fr;">
+      <div class="panel">
+        <div class="panel-title"><div class="dot" style="background:#d97706"></div> Supply Shocks — Good</div>
+        <div class="card-list" id="supply-good"></div>
+      </div>
+      <div class="panel">
+        <div class="panel-title"><div class="dot" style="background:#7c3aed"></div> Supply Shocks — Bad</div>
+        <div class="card-list" id="supply-bad"></div>
+      </div>
+    </div>
+  </div>
+
+  <div id="section-advantages" style="display:none">
+    <div class="panel">
+      <div class="panel-title"><div class="dot" style="background:#7c3aed"></div> Advantage Cards — Draw for a Player</div>
+      <div class="card-list" id="adv-list"></div>
+    </div>
+  </div>
+
+  <div id="section-properties" style="display:none">
+    <div class="buy-panel">
+      <div class="panel-title"><div class="dot" style="background:#2d6a4f"></div> Properties — Click to Buy</div>
+      <div class="prop-grid" id="prop-grid"></div>
+    </div>
+  </div>
+
+  <!-- LOG -->
+  <div class="log-panel">
+    <div class="log-title">📋 Game Log</div>
+    <div class="log-entries" id="game-log"></div>
+  </div>
+
+</main>
+
+<!-- ADVANTAGE USE MODAL -->
+<div class="modal-overlay" id="adv-modal">
+  <div class="modal">
+    <h3 id="modal-card-name"></h3>
+    <p id="modal-card-desc"></p>
+    <select class="modal-select" id="modal-steal-target" style="display:none">
+      <option value="">Select target industry...</option>
+    </select>
+    <div class="modal-btns">
+      <button onclick="confirmUseAdvantage()">Play Card</button>
+      <button class="cancel-btn" onclick="closeModal()">Cancel</button>
+    </div>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+const INDUSTRIES = {{ industries | tojson }};
+const DEMAND_SHOCKS = {{ demand_shocks | tojson }};
+const SUPPLY_SHOCKS = {{ supply_shocks | tojson }};
+const ADV_CARDS = {{ advantage_cards | tojson }};
+const PROPERTIES = {{ properties | tojson }};
+const GOALS = {{ goals | tojson }};
+
+const IND_COLORS = { fishing: '#0077b6', hotelery: '#8338ec', tourism: '#f77f00', restaurants: '#d62828' };
+
+let state = {};
+let activeAdv = null; // {ind, cardId}
+
+async function fetchState() {
+  const r = await fetch('/state');
+  const d = await r.json();
+  state = d.state;
+  renderCards(d.winners);
+  renderLog(d.log);
+}
+
+function renderCards(winners=[]) {
+  const grid = document.getElementById('cards-grid');
+  grid.innerHTML = '';
+  for (const [id, info] of Object.entries(INDUSTRIES)) {
+    const s = state[id];
+    if (!s) continue;
+    const isWinner = winners.includes(id);
+    const color = IND_COLORS[id];
+    const ownedProps = PROPERTIES.filter(p => s.properties.includes(p.id));
+    const advCards = ADV_CARDS.filter(c => s.advantage_cards.includes(c.id));
+
+    const growthPct = Math.min(100, (s.growth / GOALS.growth) * 100);
+    // For inflation and unemp: progress = how close to goal (lower is better)
+    const inflPct = Math.max(0, Math.min(100, ((s.inflation - GOALS.inflation) / (100 - GOALS.inflation)) * 100));
+    const unempPct = Math.max(0, Math.min(100, ((s.unemployment - GOALS.unemployment) / (100 - GOALS.unemployment)) * 100));
+
+    grid.innerHTML += `
+    <div class="player-card ${isWinner ? 'winner' : ''}" id="card-${id}">
+      <div class="card-header">
+        <div class="industry-icon" style="background:${color}22; font-size:1.4rem">${info.emoji}</div>
+        <div class="card-header-info">
+          <div class="industry-name" style="color:${color}">${info.name}</div>
+          <div class="money-display">Balance: <strong>$${s.money}</strong></div>
+        </div>
+        ${isWinner ? '<span class="winner-badge">🏆 Winner!</span>' : ''}
+      </div>
+      <div class="metrics">
+        <div class="metric growth">
+          <div class="metric-header">
+            <span class="metric-label">📈 Growth</span>
+            <div>
+              <span class="metric-value" style="color:var(--growth-color)">${s.growth}</span>
+              <span class="metric-goal"> / 100</span>
+            </div>
+          </div>
+          <div class="progress-track"><div class="progress-fill" style="width:${growthPct}%; background:var(--growth-color)"></div></div>
+          <div class="adjust-row">
+            <button class="adj-btn minus" onclick="adjust('${id}','growth',-5)">−5</button>
+            <button class="adj-btn minus" onclick="adjust('${id}','growth',-1)">−1</button>
+            <button class="adj-btn plus" onclick="adjust('${id}','growth',1)">+1</button>
+            <button class="adj-btn plus" onclick="adjust('${id}','growth',5)">+5</button>
+          </div>
+        </div>
+        <div class="metric inflation">
+          <div class="metric-header">
+            <span class="metric-label">🔥 Inflation</span>
+            <div>
+              <span class="metric-value" style="color:var(--inflation-color)">${s.inflation}</span>
+              <span class="metric-goal"> → goal ≤5</span>
+            </div>
+          </div>
+          <div class="progress-track"><div class="progress-fill" style="width:${inflPct}%; background:var(--inflation-color)"></div></div>
+          <div class="adjust-row">
+            <button class="adj-btn minus" onclick="adjust('${id}','inflation',-5)">−5</button>
+            <button class="adj-btn minus" onclick="adjust('${id}','inflation',-1)">−1</button>
+            <button class="adj-btn plus" onclick="adjust('${id}','inflation',1)">+1</button>
+            <button class="adj-btn plus" onclick="adjust('${id}','inflation',5)">+5</button>
+          </div>
+        </div>
+        <div class="metric unemp">
+          <div class="metric-header">
+            <span class="metric-label">👷 Unemployment</span>
+            <div>
+              <span class="metric-value" style="color:var(--unemp-color)">${s.unemployment}</span>
+              <span class="metric-goal"> → goal ≤5</span>
+            </div>
+          </div>
+          <div class="progress-track"><div class="progress-fill" style="width:${unempPct}%; background:var(--unemp-color)"></div></div>
+          <div class="adjust-row">
+            <button class="adj-btn minus" onclick="adjust('${id}','unemployment',-5)">−5</button>
+            <button class="adj-btn minus" onclick="adjust('${id}','unemployment',-1)">−1</button>
+            <button class="adj-btn plus" onclick="adjust('${id}','unemployment',1)">+1</button>
+            <button class="adj-btn plus" onclick="adjust('${id}','unemployment',5)">+5</button>
+          </div>
+        </div>
+        <div class="adjust-row" style="margin-top:0.25rem">
+          <button class="adj-btn" onclick="adjust('${id}','money',-50)" style="color:#9b2226">−$50</button>
+          <button class="adj-btn" onclick="adjust('${id}','money',-100)" style="color:#9b2226">−$100</button>
+          <button class="adj-btn" onclick="adjust('${id}','money',50)" style="color:#2d6a4f">+$50</button>
+          <button class="adj-btn" onclick="adjust('${id}','money',100)" style="color:#2d6a4f">+$100</button>
+        </div>
+      </div>
+      ${advCards.length ? `
+      <div class="adv-section">
+        <div class="adv-label">🃏 Advantage Cards (${advCards.length})</div>
+        <div class="adv-chips">${advCards.map(c => `
+          <span class="adv-chip" onclick="openAdvModal('${id}','${c.id}')" title="${c.desc}">${c.title}</span>
+        `).join('')}</div>
+      </div>` : ''}
+      ${ownedProps.length ? `
+      <div class="props-section">
+        <div class="adv-label" style="padding-top:0.6rem">🏗️ Properties (${ownedProps.length})</div>
+        <div class="props-chips">${ownedProps.map(p => `
+          <span class="prop-chip" style="background:${color}15; border-color:${color}44; color:${color}">${p.name}</span>
+        `).join('')}</div>
+      </div>` : ''}
+    </div>`;
+  }
+}
+
+function renderShocks() {
+  const demandGood = DEMAND_SHOCKS.filter(c => c.valence === 'good');
+  const demandBad = DEMAND_SHOCKS.filter(c => c.valence === 'bad');
+  const supplyGood = SUPPLY_SHOCKS.filter(c => c.valence === 'good');
+  const supplyBad = SUPPLY_SHOCKS.filter(c => c.valence === 'bad');
+
+  document.getElementById('demand-good').innerHTML = demandGood.map(c => shockCardHTML(c)).join('');
+  document.getElementById('demand-bad').innerHTML = demandBad.map(c => shockCardHTML(c)).join('');
+  document.getElementById('supply-good').innerHTML = supplyGood.map(c => shockCardHTML(c)).join('');
+  document.getElementById('supply-bad').innerHTML = supplyBad.map(c => shockCardHTML(c)).join('');
+}
+
+function shockCardHTML(card) {
+  const cls = card.valence === 'good' ? 'good' : 'bad';
+  const typeCls = card.type === 'demand' ? 'type-demand' : 'type-supply';
+  const effects = Object.entries(card.effects).map(([k,v]) =>
+    `<span class="effect-tag">${v>0?'+':''}${v} ${k}</span>`).join('');
+  return `
+  <div class="wild-card ${cls}" id="shock-${card.id}">
+    <div class="wc-title">
+      <span class="${typeCls} wc-type">${card.type}</span>
+      ${card.title}
+    </div>
+    <div class="wc-desc">${card.desc}</div>
+    <div class="wc-effects">${effects}</div>
+    <div class="apply-card-section">
+      <div class="apply-label">Affects:</div>
+      <div class="target-checks">${Object.entries(INDUSTRIES).map(([id,info])=>`
+        <label class="target-check">
+          <input type="checkbox" checked data-shock="${card.id}" data-ind="${id}">
+          ${info.emoji} ${info.name}
+        </label>`).join('')}
+      </div>
+      <button class="apply-btn shock-apply" onclick="applyShock('${card.id}')">Apply Shock</button>
+    </div>
+  </div>`;
+}
+
+function renderAdvantages() {
+  document.getElementById('adv-list').innerHTML = ADV_CARDS.map(card => `
+    <div class="wild-card advantage">
+      <div class="wc-title">
+        <span class="type-adv wc-type">advantage</span>
+        ${card.title}
+      </div>
+      <div class="wc-desc">${card.desc}</div>
+      <div class="apply-card-section">
+        <div class="apply-label">Give to:</div>
+        <div class="target-checks">${Object.entries(INDUSTRIES).map(([id,info])=>`
+          <label class="target-check" style="cursor:pointer">
+            <input type="radio" name="adv-target-${card.id}" value="${id}">
+            ${info.emoji} ${info.name}
+          </label>`).join('')}
+        </div>
+        <button class="apply-btn adv-apply" onclick="drawAdvantage('${card.id}')">Give Card (Secret)</button>
+      </div>
+    </div>`).join('');
+}
+
+function renderProperties() {
+  const grid = document.getElementById('prop-grid');
+  const allOwned = {};
+  for (const [id] of Object.entries(INDUSTRIES)) {
+    if (state[id]) state[id].properties.forEach(p => allOwned[p] = id);
+  }
+  grid.innerHTML = PROPERTIES.map(p => {
+    const owned = allOwned[p.id];
+    const color = owned ? IND_COLORS[owned] : '#2d6a4f';
+    const indBonus = p.industry_bonus ? `<span class="prop-industry-tag" style="background:${IND_COLORS[p.industry_bonus]}22;color:${IND_COLORS[p.industry_bonus]};border:1px solid ${IND_COLORS[p.industry_bonus]}44">${INDUSTRIES[p.industry_bonus].name} bonus</span>` : '';
+    return `
+    <div class="prop-item ${owned ? 'owned' : ''}">
+      ${indBonus}
+      <div class="prop-name">${p.name}</div>
+      <div class="prop-cost">$${p.cost}</div>
+      <div class="prop-bonus">${p.desc}</div>
+      ${!owned ? `<div class="buy-for">
+        <select id="buyer-${p.id}">
+          ${Object.entries(INDUSTRIES).map(([id,info])=>`<option value="${id}">${info.emoji} ${info.name}</option>`).join('')}
+        </select>
+        <button onclick="buyProperty('${p.id}')">Buy</button>
+      </div>` : `<div style="font-size:0.72rem;color:${color};margin-top:0.4rem;font-weight:600">Owned by ${INDUSTRIES[owned].name}</div>`}
+    </div>`;
+  }).join('');
+}
+
+function renderLog(entries) {
+  const el = document.getElementById('game-log');
+  el.innerHTML = [...entries].reverse().map(e => `<div class="log-entry">${e}</div>`).join('');
+}
+
+async function applyShock(cardId) {
+  const checks = document.querySelectorAll(`input[data-shock="${cardId}"]:checked`);
+  const targets = Array.from(checks).map(c => c.dataset.ind);
+  if (!targets.length) return toast('Select at least one industry.');
+  await fetch('/apply_shock', { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({card_id: cardId, targets}) });
+  toast('Shock applied!');
+  fetchState();
+}
+
+async function drawAdvantage(cardId) {
+  const sel = document.querySelector(`input[name="adv-target-${cardId}"]:checked`);
+  if (!sel) return toast('Select a player first.');
+  const ind = sel.value;
+  await fetch('/draw_advantage', { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({industry: ind, card_id: cardId}) });
+  toast(`Advantage card given to ${INDUSTRIES[ind].name} (secretly)!`);
+  fetchState();
+}
+
+async function buyProperty(propId) {
+  const ind = document.getElementById(`buyer-${propId}`).value;
+  const r = await fetch('/buy_property', { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({industry: ind, property_id: propId}) });
+  const d = await r.json();
+  if (d.error) return toast('Error: ' + d.error);
+  toast('Property purchased!');
+  fetchState();
+  renderProperties();
+}
+
+async function adjust(ind, stat, delta) {
+  await fetch('/manual_adjust', { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({industry: ind, stat, delta}) });
+  fetchState();
+}
+
+function openAdvModal(ind, cardId) {
+  const card = ADV_CARDS.find(c => c.id === cardId);
+  activeAdv = { ind, cardId };
+  document.getElementById('modal-card-name').textContent = card.title;
+  document.getElementById('modal-card-desc').textContent = card.desc;
+  const stealSel = document.getElementById('modal-steal-target');
+  if (card.effect_type === 'steal') {
+    stealSel.style.display = 'block';
+    stealSel.innerHTML = '<option value="">Select target...</option>' +
+      Object.entries(INDUSTRIES).filter(([id])=>id!==ind).map(([id,info])=>`<option value="${id}">${info.emoji} ${info.name}</option>`).join('');
+  } else {
+    stealSel.style.display = 'none';
+  }
+  document.getElementById('adv-modal').classList.add('open');
+}
+
+function closeModal() {
+  document.getElementById('adv-modal').classList.remove('open');
+  activeAdv = null;
+}
+
+async function confirmUseAdvantage() {
+  if (!activeAdv) return;
+  const card = ADV_CARDS.find(c => c.id === activeAdv.cardId);
+  let target = activeAdv.ind;
+  if (card.effect_type === 'steal') {
+    target = document.getElementById('modal-steal-target').value;
+    if (!target) return toast('Select a target.');
+  }
+  const r = await fetch('/use_advantage', { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({industry: activeAdv.ind, card_id: activeAdv.cardId, target}) });
+  const d = await r.json();
+  closeModal();
+  toast(d.ok ? 'Advantage card played!' : d.error);
+  fetchState();
+}
+
+function showSection(name) {
+  ['shocks','advantages','properties'].forEach(s => {
+    document.getElementById(`section-${s}`).style.display = s === name ? '' : 'none';
+  });
+  document.querySelectorAll('.tab').forEach((t,i) => {
+    t.classList.toggle('active', ['shocks','advantages','properties'][i] === name);
+  });
+  if (name === 'properties') renderProperties();
+}
+
+async function confirmReset() {
+  if (!confirm('Reset the game? All scores and cards will be lost.')) return;
+  await fetch('/reset_game', { method: 'POST' });
+  toast('Game reset!');
+  fetchState();
+}
+
+function toast(msg) {
+  const el = document.getElementById('toast');
+  el.textContent = msg;
+  el.classList.add('show');
+  setTimeout(() => el.classList.remove('show'), 2800);
+}
+
+// INIT
+renderShocks();
+renderAdvantages();
+fetchState();
+setInterval(fetchState, 4000); // auto-refresh every 4s
+</script>
+</body>
+</html>
