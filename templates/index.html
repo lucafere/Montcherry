@@ -471,13 +471,6 @@ function renderCards(winners=[]) {
           <button class="adj-btn" onclick="adjust('${id}','money',100)" style="color:#2d6a4f">+$100</button>
         </div>
       </div>
-      ${advCards.length ? `
-      <div class="adv-section">
-        <div class="adv-label">🃏 Advantage Cards (${advCards.length})</div>
-        <div class="adv-chips">${advCards.map(c => `
-          <span class="adv-chip" onclick="openAdvModal('${id}','${c.id}')" title="${c.desc}">${c.title}</span>
-        `).join('')}</div>
-      </div>` : ''}
       ${ownedProps.length ? `
       <div class="props-section">
         <div class="adv-label" style="padding-top:0.6rem">🏗️ Properties (${ownedProps.length})</div>
@@ -527,27 +520,6 @@ function shockCardHTML(card) {
   </div>`;
 }
 
-function renderAdvantages() {
-  document.getElementById('adv-list').innerHTML = ADV_CARDS.map(card => `
-    <div class="wild-card advantage">
-      <div class="wc-title">
-        <span class="type-adv wc-type">advantage</span>
-        ${card.title}
-      </div>
-      <div class="wc-desc">${card.desc}</div>
-      <div class="apply-card-section">
-        <div class="apply-label">Give to:</div>
-        <div class="target-checks">${Object.entries(INDUSTRIES).map(([id,info])=>`
-          <label class="target-check" style="cursor:pointer">
-            <input type="radio" name="adv-target-${card.id}" value="${id}">
-            ${info.emoji} ${info.name}
-          </label>`).join('')}
-        </div>
-        <button class="apply-btn adv-apply" onclick="drawAdvantage('${card.id}')">Give Card (Secret)</button>
-      </div>
-    </div>`).join('');
-}
-
 function renderProperties() {
   const grid = document.getElementById('prop-grid');
   const allOwned = {};
@@ -588,14 +560,6 @@ async function applyShock(cardId) {
   fetchState();
 }
 
-async function drawAdvantage(cardId) {
-  const sel = document.querySelector(`input[name="adv-target-${cardId}"]:checked`);
-  if (!sel) return toast('Select a player first.');
-  const ind = sel.value;
-  await fetch('/draw_advantage', { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({industry: ind, card_id: cardId}) });
-  toast(`Advantage card given to ${INDUSTRIES[ind].name} (secretly)!`);
-  fetchState();
-}
 
 async function buyProperty(propId) {
   const ind = document.getElementById(`buyer-${propId}`).value;
@@ -612,44 +576,9 @@ async function adjust(ind, stat, delta) {
   fetchState();
 }
 
-function openAdvModal(ind, cardId) {
-  const card = ADV_CARDS.find(c => c.id === cardId);
-  activeAdv = { ind, cardId };
-  document.getElementById('modal-card-name').textContent = card.title;
-  document.getElementById('modal-card-desc').textContent = card.desc;
-  const stealSel = document.getElementById('modal-steal-target');
-  if (card.effect_type === 'steal') {
-    stealSel.style.display = 'block';
-    stealSel.innerHTML = '<option value="">Select target...</option>' +
-      Object.entries(INDUSTRIES).filter(([id])=>id!==ind).map(([id,info])=>`<option value="${id}">${info.emoji} ${info.name}</option>`).join('');
-  } else {
-    stealSel.style.display = 'none';
-  }
-  document.getElementById('adv-modal').classList.add('open');
-}
-
-function closeModal() {
-  document.getElementById('adv-modal').classList.remove('open');
-  activeAdv = null;
-}
-
-async function confirmUseAdvantage() {
-  if (!activeAdv) return;
-  const card = ADV_CARDS.find(c => c.id === activeAdv.cardId);
-  let target = activeAdv.ind;
-  if (card.effect_type === 'steal') {
-    target = document.getElementById('modal-steal-target').value;
-    if (!target) return toast('Select a target.');
-  }
-  const r = await fetch('/use_advantage', { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({industry: activeAdv.ind, card_id: activeAdv.cardId, target}) });
-  const d = await r.json();
-  closeModal();
-  toast(d.ok ? 'Advantage card played!' : d.error);
-  fetchState();
-}
 
 function showSection(name) {
-  ['shocks','advantages','properties'].forEach(s => {
+  ['shocks','properties'].forEach(s => {
     document.getElementById(`section-${s}`).style.display = s === name ? '' : 'none';
   });
   document.querySelectorAll('.tab').forEach((t,i) => {
@@ -674,7 +603,6 @@ function toast(msg) {
 
 // INIT
 renderShocks();
-renderAdvantages();
 fetchState();
 setInterval(fetchState, 4000); // auto-refresh every 4s
 </script>
